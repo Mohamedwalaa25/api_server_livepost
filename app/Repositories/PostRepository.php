@@ -19,7 +19,9 @@ class PostRepository implements BaseRepository
                 'body' => data_get($attributes, 'body', 'No content'),
             ]);
             throw_if(!$created, GeneralJsonException::class, 'Failed to create model.');
-            $created->users()->sync($attributes['user_ids']);
+            if($userIds = data_get($attributes, 'user_ids')){
+                $created->users()->sync($userIds);
+            }
             return $created;
         });
     }
@@ -36,7 +38,7 @@ class PostRepository implements BaseRepository
         return $updated;
     }
 
-    public function delete( $post)
+    public function delete($post)
     {
         $deleted = $post->delete();
         throw_if(!$deleted, GeneralJsonException::class, 'Failed to create model.');

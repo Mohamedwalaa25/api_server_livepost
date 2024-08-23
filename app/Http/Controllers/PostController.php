@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\GeneralJsonException;
+use App\Http\Requests\PostReaquest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Repositories\PostRepository;
+use App\Rules\IntergerArray;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
@@ -27,9 +30,20 @@ class PostController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request , PostRepository $repository)
+    public function store(Request $request, PostRepository $repository)
     {
-   $created = $repository->create($request->all());
+        $data = $request->only([
+            'title',
+            'body',
+            'user_ids',
+        ]);
+        $validator = Validator::make($data, [
+            'title' => 'required|string|max:255',
+            'body' => ['required', 'string'],
+            'user_ids' => ['required', 'array', new IntergerArray(), 'exists:users,id'],
+        ])->validate();;
+
+        $created = $repository->create($validator);
         return new PostResource($created);
     }
 
@@ -49,17 +63,17 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Post $post , PostRepository $repository)
+    public function update(Request $request, Post $post, PostRepository $repository)
     {
-        $updated = $repository->update($post , $request->all());
+        $updated = $repository->update($post, $request->all());
         return new PostResource($post);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Post $post,PostRepository $repository)
+    public function destroy(Post $post, PostRepository $repository)
     {
-       return $repository->delete($post);
+        return $repository->delete($post);
     }
 }
